@@ -1,13 +1,14 @@
 "use client"
 
 import { useState, useEffect, useCallback, useMemo } from "react"
-import Split from "react-split"
+import dynamic from "next/dynamic"
+// client-only split panes
+const Split = dynamic(() => import("react-split"), { ssr: false })
 import { Console } from "console-feed"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { FileText, Moon, Sun, Terminal, Globe, Trash2, Share2, ArrowLeft, Settings } from "lucide-react"
 import { useTheme } from "next-themes"
-import MonacoEditorAdvanced from "@/components/monaco-editor-advanced"
 import FileExplorerAdvanced from "@/components/file-explorer-advanced"
 import { useFiles } from "@/hooks/use-files"
 import { useDebounce } from "@/hooks/use-debounce"
@@ -22,6 +23,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+
+// client-only CodeMirror editor
+const CodeMirrorEditor = dynamic(() => import("@/components/codemirror-editor"), { ssr: false })
 
 export default function EnhancedPlayground() {
   const { theme, setTheme } = useTheme()
@@ -57,8 +61,10 @@ export default function EnhancedPlayground() {
       }
     }
 
-    window.addEventListener("message", handleMessage)
-    return () => window.removeEventListener("message", handleMessage)
+    if (typeof window !== "undefined") {
+      window.addEventListener("message", handleMessage)
+      return () => window.removeEventListener("message", handleMessage)
+    }
   }, [])
 
   const clearConsole = useCallback(() => {
@@ -172,9 +178,9 @@ export default function EnhancedPlayground() {
             />
           </div>
 
-          {/* Enhanced Monaco Editor */}
+          {/* CodeMirror Editor */}
           <div className="flex flex-col">
-            <MonacoEditorAdvanced
+            <CodeMirrorEditor
               files={files}
               activeFile={activeFile}
               onFileChange={handleFileChange}
@@ -203,7 +209,11 @@ export default function EnhancedPlayground() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => window.open("data:text/html," + encodeURIComponent(iframeSrc), "_blank")}
+                    onClick={() => {
+                      if (typeof window !== "undefined") {
+                        window.open("data:text/html," + encodeURIComponent(iframeSrc), "_blank")
+                      }
+                    }}
                     className="h-7 px-2 text-xs"
                   >
                     Open in New Tab
